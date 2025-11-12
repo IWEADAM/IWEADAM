@@ -4,7 +4,14 @@
   bottom : 0;
   z-index: -1;
    }
-/* Center the container on the screen */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: sans-serif;
+}
+
 .form-container {
   position: absolute;
   top: 50%;
@@ -12,14 +19,12 @@
   transform: translate(-50%, -50%);
 }
 
-/* Put textarea and button in one row */
 .form-inline {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* Style textarea */
 textarea {
   padding: 12px;
   border-radius: 10px;
@@ -38,7 +43,6 @@ textarea:focus {
   box-shadow: 0 0 15px #00ffff;
 }
 
-/* Style button */
 button {
   padding: 12px 25px;
   border-radius: 10px;
