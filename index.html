@@ -10,16 +10,31 @@
     </style>
 </head>
 <body>
-    <h2>Messages Received</h2>
-    <ul>
-    {% for message in messages %}
-        <li>{{ message }}</li>
-    {% endfor %}
-    </ul>
+    
     <video autoplay loop muted playsinline id="bg-video">
       <source src="black-hole-in-cosmos.1920x1080.mp4" type="video/mp4">
     </video>
-   
+    <div class="form-container">
+     <form id="messageForm" class="form-inline">
+        <textarea name="message" placeholder="Write your message..." required></textarea>
+        <button type="submit">Send</button>
+     </form>
+     <div id="response"></div>
+    </div>
     <script src = "index.js"></script>
+    <script>
+     const form = document.getElementById('messageForm');
+     form.addEventListener('submit', async (e) => {
+     e.preventDefault();
+     const formData = new FormData(form);
+     const res = await fetch('/send-message', {
+        method: 'POST',
+        body: formData
+    });
+    const data = await res.text();
+    document.getElementById('response').innerText = data;
+    form.reset();
+     });
+    </script>
 </body>
 </html>
