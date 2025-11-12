@@ -4,3 +4,64 @@
   bottom : 0;
   z-index: -1;
 }
+<div class="form-container">
+  <form action="https://formspree.io/f/manlprjd" method="POST" class="form-inline">
+    <textarea name="message" placeholder="Write your message..." required></textarea>
+    <button type="submit">Send</button>
+  </form>
+</div>
+
+<style>
+/* Center the container on the screen */
+.form-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Put textarea and button in one row */
+.form-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* space between them */
+}
+
+/* Style textarea */
+textarea {
+  padding: 12px;
+  border-radius: 10px;
+  border: 2px solid rgba(255,255,255,0.5);
+  background: rgba(0,0,0,0.3);
+  color: white;
+  font-size: 16px;
+  outline: none;
+  resize: none;
+  flex: 1; /* takes available space */
+}
+
+/* Focus effect */
+textarea:focus {
+  border-color: #00ffff;
+  background: rgba(0,0,0,0.6);
+  box-shadow: 0 0 15px #00ffff;
+}
+
+/* Style button */
+button {
+  padding: 12px 25px;
+  border-radius: 10px;
+  border: 2px solid #00ffff;
+  background: rgba(0,0,0,0.3);
+  color: #00ffff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+/* Hover effect */
+button:hover {
+  background: rgba(0,255,255,0.2);
+  box-shadow: 0 0 15px #00ffff;
+}
+</style>
