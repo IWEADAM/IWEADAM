@@ -10,16 +10,16 @@
     </style>
 </head>
 <body>
+    <h2>Messages Received</h2>
+    <ul>
+    {% for message in messages %}
+        <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
     <video autoplay loop muted playsinline id="bg-video">
       <source src="black-hole-in-cosmos.1920x1080.mp4" type="video/mp4">
     </video>
-    <div class="form-container">
-      <form action="https://formspree.io/f/manlprjd" method="POST" class="form-inline">
-    <textarea name="message" placeholder="Write your message..." required></textarea>
-    <button type="submit">Send</button>
-    <input type="hidden" name="_next" value="thankyou.html">
-      </form>
-    </div>
+   
     <script src = "index.js"></script>
 </body>
 </html>
