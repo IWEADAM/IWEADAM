@@ -15,43 +15,6 @@
       <source src="black-hole-in-cosmos.1920x1080.mp4" type="video/mp4">
     </video>
 
-    <!-- Floating icon -->
-<div id="msgIcon" style="
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 60px;
-    height: 60px;
-    background-color: #7700ff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 1000;
-">
-    💬
-</div>
-
-<!-- Hidden messages panel -->
-<div id="msgPanel" style="
-    display: none;
-    position: fixed;
-    bottom: 90px;
-    right: 20px;
-    width: 300px;
-    max-height: 400px;
-    overflow-y: auto;
-    background-color: rgba(0,0,0,0.8);
-    color: white;
-    padding: 15px;
-    border-radius: 15px;
-    z-index: 999;
-">
-    <h3>Messages</h3>
-    <ul id="messagesList" style="list-style:none; padding:0;"></ul>
-</div>
-
 <!-- Input box -->
 <div class="form-container" style="
     position: absolute;
@@ -65,34 +28,6 @@
     <button id="sendBtn">Send</button>
 </div>
 
-<script>
-const msgIcon = document.getElementById('msgIcon');
-const msgPanel = document.getElementById('msgPanel');
-const sendBtn = document.getElementById('sendBtn');
-const msgInput = document.getElementById('msgInput');
-const messagesList = document.getElementById('messagesList');
-
-const messages = []; // stores messages in memory
-
-// Toggle panel
-msgIcon.addEventListener('click', () => {
-    msgPanel.style.display = msgPanel.style.display === 'none' ? 'block' : 'none';
-});
-
-// Add message
-sendBtn.addEventListener('click', () => {
-    const msg = msgInput.value.trim();
-    if(!msg) return;
-    
-    messages.push(msg);
-
-    const li = document.createElement('li');
-    li.textContent = msg;
-    messagesList.appendChild(li);
-
-    msgInput.value = '';
-});
-</script>
     <script src = "index.js"></script>
 </body>
 </html>
