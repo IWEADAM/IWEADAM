@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", function() {
         sendBtn.innerHTML = '<span>Sending...</span>';
         
         // Your webhook URL
-        const webhookUrl = "https://discord.com/api/webhooks/1439619216624844812/lo-HnJWV36Rmhf0OCOZASToXf7uclpnbREDl_m28ojU72Pskl3VZKIDdynFTJfjrmagD";
+        const webhookUrl = "https://cors-anywhere.herokuapp.com/https://discord.com/api/webhooks/1439619216624844812/lo-HnJWV36Rmhf0OCOZASToXf7uclpnbREDl_m28ojU72Pskl3VZKIDdynFTJfjrmagD";
         
         fetch(webhookUrl, {
             method: "POST",
