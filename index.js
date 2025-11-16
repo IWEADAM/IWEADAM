@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .finally(() => {
             // Re-enable button
             sendBtn.disabled = false;
-            sendBtn.innerHTML = '<span>Send Message</span>';
+            sendBtn.innerHTML = '<span>Send</span>';
         });
     }
     
