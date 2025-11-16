@@ -4,30 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="style.css">
-    <title>IWEADAM</title>
-    <style>
-        
-    </style>
+    <title>Discord Webhook Message Sender</title>
 </head>
 <body>
-    
     <video autoplay loop muted playsinline id="bg-video">
-      <source src="black-hole-in-cosmos.1920x1080.mp4" type="video/mp4">
+        <source src="black-hole-in-cosmos.1920x1080.mp4" type="video/mp4">
     </video>
 
-<!-- Input box -->
-<div class="form-container" style="
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    gap: 10px;
-">
-    <textarea id="msgInput" placeholder="Write a message..." style="flex:1; padding:10px;"></textarea>
-    <button id="sendBtn">Send</button>
-</div>
+    <div class="container">
+        <div class="header">
+            <h1>Discord Webhook Sender</h1>
+            <p>Send messages directly to your Discord server using a webhook</p>
+        </div>
+        
+        <div class="form-container">
+            <textarea id="msgInput" placeholder="Type your message here..."></textarea>
+            
+            <div class="button-container">
+                <button id="sendBtn">
+                    <span>Send Message</span>
+                </button>
+            </div>
+            
+            <div id="status" class="status"></div>
+        </div>
+        
+        <div class="footer">
+            <p>Your message will be sent to the configured Discord webhook</p>
+        </div>
+    </div>
 
-    <script src = "index.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
