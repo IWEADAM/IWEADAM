@@ -39,15 +39,14 @@ document.addEventListener("DOMContentLoaded", function() {
             })
         })
         .then(response => {
-            if (!response.ok) {
+            if (response.ok) {
+                // Success! Discord returns empty response for webhooks
+                console.log("Message sent successfully!");
+                showStatus("Message sent successfully!", "success");
+                msgInput.value = ""; // Clear the input
+            } else {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            return response.json();
-        })
-        .then(data => {
-            console.log("Message sent successfully:", data);
-            showStatus("Message sent successfully!", "success");
-            msgInput.value = ""; // Clear the input
         })
         .catch(error => {
             console.error("Error sending message:", error);
