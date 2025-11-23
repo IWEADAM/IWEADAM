@@ -25,21 +25,21 @@ html, body {
     background: rgba(0, 0, 0, 0.7);
     border-radius: 15px;
     backdrop-filter: blur(10px);
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 20px rgba(128, 0, 128, 0.5);
     overflow: hidden;
 }
 
 .tabs {
     display: flex;
     background: rgba(0, 0, 0, 0.8);
-    border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+    border-bottom: 1px solid rgba(128, 0, 128, 0.5);
 }
 
 .tab {
     flex: 1;
     padding: 15px;
     text-align: center;
-    color: #00ffff;
+    color: #b300ff;
     cursor: pointer;
     transition: all 0.3s;
     font-weight: bold;
@@ -48,12 +48,12 @@ html, body {
 }
 
 .tab.active {
-    background: rgba(0, 255, 255, 0.2);
-    box-shadow: 0 0 10px #00ffff;
+    background: rgba(128, 0, 128, 0.3);
+    box-shadow: 0 0 10px #b300ff;
 }
 
 .tab:hover:not(.active) {
-    background: rgba(0, 255, 255, 0.1);
+    background: rgba(128, 0, 128, 0.2);
 }
 
 .tab-content {
@@ -71,7 +71,7 @@ html, body {
 }
 
 .bio-content h2 {
-    color: #00ffff;
+    color: #b300ff;
     margin-top: 0;
     text-align: center;
     font-size: 24px;
@@ -94,7 +94,7 @@ html, body {
 }
 
 label {
-    color: #00ffff;
+    color: #b300ff;
     font-weight: bold;
 }
 
@@ -110,9 +110,9 @@ input, textarea {
 }
 
 input:focus, textarea:focus {
-    border-color: #00ffff;
+    border-color: #b300ff;
     background: rgba(0,0,0,0.6);
-    box-shadow: 0 0 15px #00ffff;
+    box-shadow: 0 0 15px #b300ff;
 }
 
 .button-container {
@@ -123,17 +123,17 @@ input:focus, textarea:focus {
 button {
     padding: 12px 25px;
     border-radius: 10px;
-    border: 2px solid #00ffff;
+    border: 2px solid #b300ff;
     background: rgba(0,0,0,0.3);
-    color: #00ffff;
+    color: #b300ff;
     font-size: 16px;
     cursor: pointer;
     transition: 0.3s;
 }
 
 button:hover {
-    background: rgba(0,255,255,0.2);
-    box-shadow: 0 0 15px #00ffff;
+    background: rgba(179, 0, 255, 0.2);
+    box-shadow: 0 0 15px #b300ff;
 }
 
 button:disabled {
