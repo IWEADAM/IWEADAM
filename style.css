@@ -1,10 +1,46 @@
 #bg-video {
     position: fixed;
-    right: 0;
-    bottom: 0;
+    top: 50%;
+    left: 50%;
     min-width: 100%;
     min-height: 100%;
+    width: auto;
+    height: auto;
     z-index: -1;
+    transform: translateX(-50%) translateY(-50%);
+    object-fit: cover;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 768px) {
+    #bg-video {
+        min-width: 100vw;
+        min-height: 100vh;
+        width: 100vw;
+        height: 100vh;
+    }
+    
+    .container {
+        width: 95%;
+        max-width: 95%;
+        margin: 10px;
+    }
+    
+    .tab-content {
+        padding: 20px;
+    }
+    
+    .bio-content h2 {
+        font-size: 20px;
+    }
+    
+    .bio-content p {
+        font-size: 14px;
+    }
+    
+    input, textarea, button {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
 }
 
 html, body {
