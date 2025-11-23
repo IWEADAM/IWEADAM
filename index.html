@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Portfolio</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -10,18 +11,44 @@
         <source src="black-hole-in-cosmos.1920x1080.mp4" type="video/mp4">
     </video>
 
-        <div class="form-container">
-            <textarea id="msgInput" placeholder="Type your message here..."></textarea>
-            
-            <div class="button-container">
-                <button id="sendBtn">
-                    <span>Send</span>
-                </button>
-            </div>
-            
-            <div id="status" class="status"></div>
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" data-tab="bio">Bio</div>
+            <div class="tab" data-tab="message">Send Message</div>
         </div>
 
-    <script src="index.js"></script>
+        <div class="tab-content active" id="bio-tab">
+            <div class="bio-content">
+                <h2>About Me</h2>
+                <p>Hello! I'm a passionate developer with a love for creating interactive web experiences. My journey in technology began several years ago, and I've been exploring the vast universe of web development ever since.</p>
+                <p>When I'm not coding, you can find me exploring new technologies, contributing to open-source projects, or simply enjoying the beauty of the cosmos.</p>
+                <p>I believe in the power of technology to connect people and create meaningful experiences. Feel free to reach out if you'd like to collaborate or just have a chat!</p>
+            </div>
+        </div>
+
+        <div class="tab-content" id="message-tab">
+            <div class="form-container">
+                <div class="input-group">
+                    <label for="nameInput">Your Name</label>
+                    <input type="text" id="nameInput" placeholder="Enter your name">
+                </div>
+                
+                <div class="input-group">
+                    <label for="msgInput">Your Message</label>
+                    <textarea id="msgInput" placeholder="Type your message here..." rows="5"></textarea>
+                </div>
+                
+                <div class="button-container">
+                    <button id="sendBtn">
+                        <span>Send Message</span>
+                    </button>
+                </div>
+                
+                <div id="status" class="status"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>

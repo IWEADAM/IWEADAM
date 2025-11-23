@@ -1,6 +1,25 @@
 document.addEventListener("DOMContentLoaded", function() {
+    // Tab functionality
+    const tabs = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs and contents
+            tabs.forEach(t => t.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            tab.classList.add('active');
+            const tabId = tab.getAttribute('data-tab') + '-tab';
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+    
+    // Message sending functionality
     const sendBtn = document.getElementById("sendBtn");
     const msgInput = document.getElementById("msgInput");
+    const nameInput = document.getElementById("nameInput");
     const status = document.getElementById("status");
     
     sendBtn.addEventListener("click", sendMessage);
@@ -13,10 +32,18 @@ document.addEventListener("DOMContentLoaded", function() {
     });
     
     function sendMessage() {
+        const name = nameInput.value.trim();
         const message = msgInput.value.trim();
+        
+        if (!name) {
+            showStatus("Please enter your name", "error");
+            nameInput.focus();
+            return;
+        }
         
         if (!message) {
             showStatus("Please enter a message", "error");
+            msgInput.focus();
             return;
         }
         
@@ -33,8 +60,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 "Content-Type": "application/json" 
             },
             body: JSON.stringify({
-                content: message,
-                username: "Webhook Sender",
+                content: `**From:** ${name}\n\n**Message:** ${message}`,
+                username: "Website Contact",
                 avatar_url: "https://cdn.discordapp.com/embed/avatars/0.png"
             })
         })
@@ -44,6 +71,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 console.log("Message sent successfully!");
                 showStatus("Message sent successfully!", "success");
                 msgInput.value = ""; // Clear the input
+                nameInput.value = ""; // Clear the name
             } else {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -55,7 +83,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .finally(() => {
             // Re-enable button
             sendBtn.disabled = false;
-            sendBtn.innerHTML = '<span>Send</span>';
+            sendBtn.innerHTML = '<span>Send Message</span>';
         });
     }
     
@@ -65,7 +93,7 @@ document.addEventListener("DOMContentLoaded", function() {
         
         // Hide status after 5 seconds
         setTimeout(() => {
-            status.style.display = "none";
+            status.className = "status";
         }, 5000);
     }
 });
