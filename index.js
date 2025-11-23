@@ -3,16 +3,27 @@ document.addEventListener("DOMContentLoaded", function() {
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
     
+    console.log('Tabs found:', tabs.length); // Debug log
+    
     tabs.forEach(tab => {
-        tab.addEventListener('click', () => {
+        tab.addEventListener('click', function() {
+            console.log('Tab clicked:', this.getAttribute('data-tab')); // Debug log
+            
             // Remove active class from all tabs and contents
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
             
             // Add active class to clicked tab and corresponding content
-            tab.classList.add('active');
-            const tabId = tab.getAttribute('data-tab') + '-tab';
-            document.getElementById(tabId).classList.add('active');
+            this.classList.add('active');
+            const tabId = this.getAttribute('data-tab') + '-tab';
+            const targetContent = document.getElementById(tabId);
+            
+            if (targetContent) {
+                targetContent.classList.add('active');
+                console.log('Showing tab:', tabId); // Debug log
+            } else {
+                console.error('Tab content not found:', tabId);
+            }
         });
     });
     
@@ -22,14 +33,18 @@ document.addEventListener("DOMContentLoaded", function() {
     const nameInput = document.getElementById("nameInput");
     const status = document.getElementById("status");
     
-    sendBtn.addEventListener("click", sendMessage);
+    if (sendBtn) {
+        sendBtn.addEventListener("click", sendMessage);
+    }
     
     // Also send message when pressing Enter (with Ctrl or Cmd)
-    msgInput.addEventListener("keydown", function(e) {
-        if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
-            sendMessage();
-        }
-    });
+    if (msgInput) {
+        msgInput.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+                sendMessage();
+            }
+        });
+    }
     
     function sendMessage() {
         const name = nameInput.value.trim();
@@ -67,11 +82,10 @@ document.addEventListener("DOMContentLoaded", function() {
         })
         .then(response => {
             if (response.ok) {
-                // Success! Discord returns empty response for webhooks
                 console.log("Message sent successfully!");
                 showStatus("Message sent successfully!", "success");
-                msgInput.value = ""; // Clear the input
-                nameInput.value = ""; // Clear the name
+                msgInput.value = "";
+                nameInput.value = "";
             } else {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -81,19 +95,19 @@ document.addEventListener("DOMContentLoaded", function() {
             showStatus(`Failed to send message: ${error.message}`, "error");
         })
         .finally(() => {
-            // Re-enable button
             sendBtn.disabled = false;
             sendBtn.innerHTML = '<span>Send Message</span>';
         });
     }
     
     function showStatus(message, type) {
-        status.textContent = message;
-        status.className = "status " + type;
-        
-        // Hide status after 5 seconds
-        setTimeout(() => {
-            status.className = "status";
-        }, 5000);
+        if (status) {
+            status.textContent = message;
+            status.className = "status " + type;
+            
+            setTimeout(() => {
+                status.className = "status";
+            }, 5000);
+        }
     }
 });
