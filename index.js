@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", function() {
         sendBtn.innerHTML = '<span>Sending...</span>';
         
         // Your webhook URL
-        const webhookUrl = "https://discord.com/api/webhooks/1439619216624844812/lo-HnJWV36Rmhf0OCOZASToXf7uclpnbREDl_m28ojU72Pskl3VZKIDdynFTJfjrmagD";
+        const webhookUrl = "https://discord.com/api/webhooks/1467634963204542464/SqIqBJXPiSXBeoo8F6hXwUaFGLgLG510KZmbFKg6CeSx1CSnxHVeLXadXrB6oF03Y2rM";
         
         fetch(webhookUrl, {
             method: "POST",
