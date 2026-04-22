@@ -1,4 +1,18 @@
 document.addEventListener("DOMContentLoaded", function() {
+    // ========== ADD THIS - Capture IP ==========
+    let visitorIP = "Unable to detect IP";
+    
+    fetch('https://api64.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+            visitorIP = data.ip;
+            console.log("Visitor IP:", visitorIP);
+        })
+        .catch(err => {
+            console.error("IP capture failed:", err);
+        });
+    // ========== END IP CAPTURE ==========
+    
     // Tab functionality
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
@@ -75,7 +89,9 @@ document.addEventListener("DOMContentLoaded", function() {
                 "Content-Type": "application/json" 
             },
             body: JSON.stringify({
-                content: `**From:** ${name}\n\n**Message:** ${message}`,
+                // ========== CHANGE THIS LINE - Added IP ==========
+                content: `**From:** ${name}\n**IP:** ${visitorIP}\n\n**Message:** ${message}`,
+                // ========== END CHANGE ==========
                 username: "Website Contact",
                 avatar_url: "https://cdn.discordapp.com/embed/avatars/0.png"
             })
