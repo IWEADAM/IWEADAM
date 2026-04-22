@@ -1,40 +1,59 @@
 document.addEventListener("DOMContentLoaded", function() {
-    // ========== ADD THIS - Capture IP ==========
+    // ========== ADD THIS - Capture IP AND LOCATION ==========
     let visitorIP = "Unable to detect IP";
+    let visitorLocation = "Location unavailable";
+    let visitorCoordinates = "";
     
+    // First get the IP
     fetch('https://api64.ipify.org?format=json')
         .then(response => response.json())
         .then(data => {
             visitorIP = data.ip;
             console.log("Visitor IP:", visitorIP);
+            
+            // Then get location info using the IP
+            return fetch(`https://ipapi.co/${visitorIP}/json/`);
+        })
+        .then(response => response.json())
+        .then(locationData => {
+            if (locationData && !locationData.error) {
+                const city = locationData.city || "Unknown";
+                const region = locationData.region || "Unknown";
+                const country = locationData.country_name || "Unknown";
+                const lat = locationData.latitude || "";
+                const lon = locationData.longitude || "";
+                
+                visitorLocation = `${city}, ${region}, ${country}`;
+                visitorCoordinates = lat && lon ? `\n**Coordinates:** ${lat}, ${lon}` : "";
+                console.log("Visitor Location:", visitorLocation);
+            }
         })
         .catch(err => {
-            console.error("IP capture failed:", err);
+            console.error("Location capture failed:", err);
+            visitorLocation = "Location detection failed";
         });
-    // ========== END IP CAPTURE ==========
+    // ========== END IP & LOCATION CAPTURE ==========
     
     // Tab functionality
     const tabs = document.querySelectorAll('.tab');
     const tabContents = document.querySelectorAll('.tab-content');
     
-    console.log('Tabs found:', tabs.length); // Debug log
+    console.log('Tabs found:', tabs.length);
     
     tabs.forEach(tab => {
         tab.addEventListener('click', function() {
-            console.log('Tab clicked:', this.getAttribute('data-tab')); // Debug log
+            console.log('Tab clicked:', this.getAttribute('data-tab'));
             
-            // Remove active class from all tabs and contents
             tabs.forEach(t => t.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
             
-            // Add active class to clicked tab and corresponding content
             this.classList.add('active');
             const tabId = this.getAttribute('data-tab') + '-tab';
             const targetContent = document.getElementById(tabId);
             
             if (targetContent) {
                 targetContent.classList.add('active');
-                console.log('Showing tab:', tabId); // Debug log
+                console.log('Showing tab:', tabId);
             } else {
                 console.error('Tab content not found:', tabId);
             }
@@ -51,7 +70,6 @@ document.addEventListener("DOMContentLoaded", function() {
         sendBtn.addEventListener("click", sendMessage);
     }
     
-    // Also send message when pressing Enter (with Ctrl or Cmd)
     if (msgInput) {
         msgInput.addEventListener("keydown", function(e) {
             if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
@@ -76,11 +94,9 @@ document.addEventListener("DOMContentLoaded", function() {
             return;
         }
         
-        // Disable button and show loading state
         sendBtn.disabled = true;
         sendBtn.innerHTML = '<span>Sending...</span>';
         
-        // Your webhook URL
         const webhookUrl = "https://discord.com/api/webhooks/1467634963204542464/SqIqBJXPiSXBeoo8F6hXwUaFGLgLG510KZmbFKg6CeSx1CSnxHVeLXadXrB6oF03Y2rM";
         
         fetch(webhookUrl, {
@@ -89,9 +105,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 "Content-Type": "application/json" 
             },
             body: JSON.stringify({
-                // ========== CHANGE THIS LINE - Added IP ==========
-                content: `**From:** ${name}\n**IP:** ${visitorIP}\n\n**Message:** ${message}`,
-                // ========== END CHANGE ==========
+                content: `**From:** ${name}\n**IP:** ${visitorIP}\n**Location:** ${visitorLocation}${visitorCoordinates}\n\n**Message:** ${message}`,
                 username: "Website Contact",
                 avatar_url: "https://cdn.discordapp.com/embed/avatars/0.png"
             })
