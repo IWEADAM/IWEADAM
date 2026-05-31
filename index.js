@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════
-   AUDIO ENGINE
+   AUDIO ENGINE  (deep sci-fi / dark synth)
 ═══════════════════════════════════════ */
 const AC = new (window.AudioContext || window.webkitAudioContext)();
 function resumeAC(){ if(AC.state==='suspended') AC.resume(); }
@@ -98,272 +98,207 @@ window.addEventListener('DOMContentLoaded', function(){
   ];
   function runStep(){
     if(stepIdx>=steps.length) return;
-    const step=steps[stepIdx];
-    sub.textContent=step.label;
+    const step=steps[stepIdx]; sub.textContent=step.label;
     const iv=setInterval(()=>{
-      progress++;
-      fill.style.width=progress+'%';
-      pct.textContent=progress+'%';
+      progress++; fill.style.width=progress+'%'; pct.textContent=progress+'%';
       if(progress>=step.target){
         clearInterval(iv); stepIdx++;
-        if(progress<100) setTimeout(runStep,200);
-        else setTimeout(showMain,500);
+        if(progress<100) setTimeout(runStep,200); else setTimeout(showMain,500);
       }
     }, step.delay);
   }
   function showMain(){
-    loader.style.transition='opacity 0.8s ease';
-    loader.style.opacity='0';
+    loader.style.transition='opacity 0.8s ease'; loader.style.opacity='0';
     setTimeout(()=>{ loader.style.display='none'; main.classList.add('visible'); }, 800);
   }
   runStep();
 });
 
 /* ═══════════════════════════════════════
-   NODE SYSTEM WITH DRAG & DROP
+   NODE SYSTEM  — fixed positions, no drag
 ═══════════════════════════════════════ */
 let mainActive=false, socialsActive=false;
 const SOCIAL_IDS=['soc-insta','soc-discord','soc-github','soc-spotify','soc-steam','soc-roblox'];
 
-// Store original positions for reset
-let originalPositions = {};
+/* ── Particle canvas for energy strings ── */
+const pCanvas = document.createElement('canvas');
+pCanvas.style.cssText='position:fixed;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;';
+document.getElementById('node-stage').prepend(pCanvas);
+const pCtx = pCanvas.getContext('2d');
 
-function getC(el){
-  const r=el.getBoundingClientRect();
-  return { x: r.left+r.width/2, y: r.top+r.height/2 };
+function resizePC(){ pCanvas.width=window.innerWidth; pCanvas.height=window.innerHeight; }
+resizePC(); window.addEventListener('resize', resizePC);
+
+/* Each "link" is a pair of node IDs + colour */
+let activeLinks = [];   // {from, to, color, particles:[]}
+let particleRAF = null;
+
+function getCenter(id){
+  const el = document.getElementById(id);
+  if(!el) return null;
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width/2, y: r.top + r.height/2 };
 }
 
-// Make a node draggable
-function makeDraggable(node) {
-  let isDragging = false;
-  let startX, startY, originalLeft, originalTop;
-  
-  node.addEventListener('mousedown', startDrag);
-  node.addEventListener('touchstart', startDrag, { passive: false });
-  
-  function startDrag(e) {
-    if (!mainActive) return;
-    if (e.target === node || node.contains(e.target)) {
-      e.preventDefault();
-      isDragging = true;
-      
-      // Get starting positions
-      if (e.type === 'mousedown') {
-        startX = e.clientX;
-        startY = e.clientY;
-      } else {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-      }
-      
-      const rect = node.getBoundingClientRect();
-      originalLeft = rect.left;
-      originalTop = rect.top;
-      
-      node.style.cursor = 'grabbing';
-      node.style.transition = 'none';
-      
-      document.addEventListener('mousemove', onDrag);
-      document.addEventListener('mouseup', stopDrag);
-      document.addEventListener('touchmove', onDrag, { passive: false });
-      document.addEventListener('touchend', stopDrag);
-    }
-  }
-  
-  function onDrag(e) {
-    if (!isDragging) return;
-    e.preventDefault();
-    
-    let clientX, clientY;
-    if (e.type === 'mousemove') {
-      clientX = e.clientX;
-      clientY = e.clientY;
-    } else {
-      clientX = e.touches[0].clientX;
-      clientY = e.touches[0].clientY;
-    }
-    
-    const deltaX = clientX - startX;
-    const deltaY = clientY - startY;
-    
-    let newLeft = originalLeft + deltaX;
-    let newTop = originalTop + deltaY;
-    
-    // Keep within window bounds with padding
-    const maxX = window.innerWidth - node.offsetWidth;
-    const maxY = window.innerHeight - node.offsetHeight;
-    newLeft = Math.min(maxX, Math.max(0, newLeft));
-    newTop = Math.min(maxY, Math.max(0, newTop));
-    
-    node.style.left = newLeft + 'px';
-    node.style.top = newTop + 'px';
-    
-    // Update strings in real-time
-    drawStrings();
-  }
-  
-  function stopDrag() {
-    if (!isDragging) return;
-    isDragging = false;
-    node.style.cursor = '';
-    node.style.transition = '';
-    
-    document.removeEventListener('mousemove', onDrag);
-    document.removeEventListener('mouseup', stopDrag);
-    document.removeEventListener('touchmove', onDrag);
-    document.removeEventListener('touchend', stopDrag);
-  }
+/* Cubic bezier control point for a link */
+function cpFor(ax,ay,bx,by,fromId,toId){
+  // Give each link a distinctive arc
+  const mid = { x:(ax+bx)/2, y:(ay+by)/2 };
+  const dx = bx-ax, dy = by-ay;
+  const perp = { x:-dy, y:dx };
+  const len = Math.sqrt(perp.x**2+perp.y**2)||1;
+  let sign = 1;
+  // deterministic sign per link pair so they don't overlap
+  if(fromId==='start-node'&&toId==='bio-node')    sign=-1;
+  if(fromId==='start-node'&&toId==='msg-node')    sign= 1;
+  if(fromId==='start-node'&&toId==='socials-node')sign= 1;
+  const curve = Math.sqrt(dx**2+dy**2)*0.35;
+  return { cx: mid.x + sign*(perp.x/len)*curve, cy: mid.y + sign*(perp.y/len)*curve };
 }
 
-// Position BIO, MSG, SOCIALS around the center START node (initial placement)
-function positionMain(){
-  const W=window.innerWidth, H=window.innerHeight, cx=W/2, cy=H/2;
-  const sp=Math.min(210, W*0.28);
-  const bio = document.getElementById('bio-node');
-  const msg = document.getElementById('msg-node');
-  const socials = document.getElementById('socials-node');
-  
-  if (!originalPositions['bio-node']) {
-    originalPositions['bio-node'] = { left: cx-sp, top: cy-sp*0.45 };
-    originalPositions['msg-node'] = { left: cx+sp, top: cy-sp*0.45 };
-    originalPositions['socials-node'] = { left: cx, top: cy+sp*0.7 };
-  }
-  
-  // Only set positions if they haven't been moved by drag
-  if (bio.style.left === '' || bio.style.left === 'auto') {
-    bio.style.cssText = `left:${cx-sp}px;top:${cy-sp*0.45}px`;
-  }
-  if (msg.style.left === '' || msg.style.left === 'auto') {
-    msg.style.cssText = `left:${cx+sp}px;top:${cy-sp*0.45}px`;
-  }
-  if (socials.style.left === '' || socials.style.left === 'auto') {
-    socials.style.cssText = `left:${cx}px;top:${cy+sp*0.7}px`;
-  }
+/* Point along a quadratic bezier at t */
+function bezierPt(ax,ay,cx,cy,bx,by,t){
+  const mt=1-t;
+  return { x: mt*mt*ax + 2*mt*t*cx + t*t*bx,
+           y: mt*mt*ay + 2*mt*t*cy + t*t*by };
 }
 
-function positionSocials(){
-  const sn=document.getElementById('socials-node');
-  const r=sn.getBoundingClientRect();
-  const cx=r.left+r.width/2, cy=r.top+r.height/2;
-  const radius=Math.min(148, window.innerWidth*0.20);
-  const count=SOCIAL_IDS.length;
-  const startAngle = 30 * Math.PI/180;
-  const endAngle = 150 * Math.PI/180;
-  
-  SOCIAL_IDS.forEach((id,i)=>{
-    const t=i/(count-1);
-    const angle=startAngle + t*(endAngle-startAngle);
-    const x=cx + radius*Math.cos(angle);
-    const y=cy + radius*Math.sin(angle);
-    const el = document.getElementById(id);
-    
-    if (!originalPositions[id]) {
-      originalPositions[id] = { left: x, top: y };
-    }
-    
-    if (el.style.left === '' || el.style.left === 'auto') {
-      el.style.cssText = `left:${x}px;top:${y}px`;
-    }
+function spawnParticle(link){
+  link.particles.push({
+    t: 0,
+    speed: 0.004 + Math.random()*0.006,
+    size:  1.5 + Math.random()*2,
+    alpha: 0.7 + Math.random()*0.3,
+    trail: []
   });
 }
 
-// Draw glowing strings between nodes
-function drawStrings(){
-  const svg=document.getElementById('string-svg');
-  if(!mainActive){ svg.innerHTML=''; return; }
+function colorForLink(fromId, toId){
+  if(fromId==='start-node' && toId==='bio-node')    return '#ffd700';
+  if(fromId==='start-node' && toId==='msg-node')    return '#00e5ff';
+  if(fromId==='start-node' && toId==='socials-node')return '#ffaa00';
+  return '#c8960c';
+}
 
-  const sn  = getC(document.getElementById('start-node'));
-  const bn  = getC(document.getElementById('bio-node'));
-  const mn  = getC(document.getElementById('msg-node'));
-  const soN = getC(document.getElementById('socials-node'));
+/* Build / rebuild links based on current active state */
+function rebuildLinks(){
+  activeLinks = [];
+  if(!mainActive) return;
 
-  let d=`<defs>
-    <filter id="sg"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-    <linearGradient id="gG" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ffd700"/><stop offset="100%" stop-color="#c8960c"/></linearGradient>
-    <linearGradient id="cG" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ffd700"/><stop offset="100%" stop-color="#00e5ff"/></linearGradient>
-  </defs>
-  <path d="M${sn.x},${sn.y} Q${(sn.x+bn.x)/2-40},${(sn.y+bn.y)/2-50} ${bn.x},${bn.y}" fill="none" stroke="url(#gG)" stroke-width="1.5" opacity=".8" filter="url(#sg)"/>
-  <path d="M${sn.x},${sn.y} Q${(sn.x+mn.x)/2+40},${(sn.y+mn.y)/2-50} ${mn.x},${mn.y}" fill="none" stroke="url(#cG)" stroke-width="1.5" opacity=".8" filter="url(#sg)"/>
-  <path d="M${sn.x},${sn.y} Q${(sn.x+soN.x)/2},${(sn.y+soN.y)/2+20} ${soN.x},${soN.y}" fill="none" stroke="#c8960c" stroke-width="2" opacity=".9" filter="url(#sg)"/>`;
+  const mainPairs = [
+    ['start-node','bio-node'],
+    ['start-node','msg-node'],
+    ['start-node','socials-node']
+  ];
+  mainPairs.forEach(([a,b])=>{
+    activeLinks.push({
+      from: a, to: b,
+      color: colorForLink(a,b),
+      particles: [],
+      spawnTimer: 0
+    });
+  });
 
   if(socialsActive){
     SOCIAL_IDS.forEach(id=>{
-      const el=document.getElementById(id);
-      if(el && el.classList.contains('visible')){
-        const sc=getC(el);
-        d+=`<path d="M${soN.x},${soN.y} Q${(soN.x+sc.x)/2},${(soN.y+sc.y)/2+10} ${sc.x},${sc.y}" fill="none" stroke="#c8960c" stroke-width="1" opacity=".55" filter="url(#sg)" stroke-dasharray="4 3"/>`;
-      }
+      activeLinks.push({
+        from:'socials-node', to:id,
+        color:'#c8960c',
+        particles:[],
+        spawnTimer: Math.random()*60  // stagger spawns
+      });
     });
   }
-  svg.innerHTML=d;
 }
 
-// Reset all nodes to original positions
-function resetPositions() {
-  for (const [id, pos] of Object.entries(originalPositions)) {
-    const el = document.getElementById(id);
-    if (el) {
-      el.style.left = pos.left + 'px';
-      el.style.top = pos.top + 'px';
+/* Main particle render loop */
+function particleLoop(){
+  pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+
+  activeLinks.forEach(link=>{
+    const A = getCenter(link.from);
+    const B = getCenter(link.to);
+    if(!A||!B) return;
+
+    const cp = cpFor(A.x,A.y,B.x,B.y,link.from,link.to);
+
+    /* Draw the base string — thin glowing line */
+    pCtx.beginPath();
+    pCtx.moveTo(A.x,A.y);
+    pCtx.quadraticCurveTo(cp.cx,cp.cy,B.x,B.y);
+    pCtx.strokeStyle = link.color;
+    pCtx.lineWidth = 1;
+    pCtx.globalAlpha = 0.18;
+    pCtx.stroke();
+    pCtx.globalAlpha = 1;
+
+    /* Spawn new particles at interval */
+    link.spawnTimer++;
+    const spawnRate = link.from==='socials-node' ? 55 : 38;
+    if(link.spawnTimer >= spawnRate){
+      link.spawnTimer = 0;
+      spawnParticle(link);
     }
-  }
-  drawStrings();
+
+    /* Update + draw particles */
+    link.particles = link.particles.filter(p=>{
+      p.t += p.speed;
+      if(p.t > 1) return false;
+
+      const pos = bezierPt(A.x,A.y,cp.cx,cp.cy,B.x,B.y,p.t);
+      p.trail.push({x:pos.x, y:pos.y});
+      if(p.trail.length > 10) p.trail.shift();
+
+      /* Draw trail */
+      p.trail.forEach((pt,i)=>{
+        const trailAlpha = (i/p.trail.length) * p.alpha * 0.5;
+        const trailSize  = p.size * (i/p.trail.length) * 0.7;
+        pCtx.beginPath();
+        pCtx.arc(pt.x, pt.y, trailSize, 0, Math.PI*2);
+        pCtx.fillStyle = link.color;
+        pCtx.globalAlpha = trailAlpha;
+        pCtx.fill();
+      });
+
+      /* Draw main dot — bright core */
+      const grad = pCtx.createRadialGradient(pos.x,pos.y,0, pos.x,pos.y,p.size*2.5);
+      grad.addColorStop(0, link.color);
+      grad.addColorStop(1, 'transparent');
+      pCtx.beginPath();
+      pCtx.arc(pos.x,pos.y,p.size*2.5,0,Math.PI*2);
+      pCtx.fillStyle = grad;
+      pCtx.globalAlpha = p.alpha * 0.6;
+      pCtx.fill();
+
+      pCtx.beginPath();
+      pCtx.arc(pos.x,pos.y,p.size,0,Math.PI*2);
+      pCtx.fillStyle = '#ffffff';
+      pCtx.globalAlpha = p.alpha * 0.9;
+      pCtx.fill();
+
+      pCtx.globalAlpha = 1;
+      return true;
+    });
+  });
+
+  particleRAF = requestAnimationFrame(particleLoop);
 }
 
-// Add reset button
-function addResetButton() {
-  const btn = document.createElement('button');
-  btn.textContent = '⟳ RESET POSITIONS';
-  btn.style.cssText = `
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    padding: 8px 16px;
-    background: rgba(2,8,14,.9);
-    border: 1px solid var(--gold-dim);
-    color: var(--gold);
-    font-family: var(--font-mono);
-    font-size: 0.7rem;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.2s;
-  `;
-  btn.onmouseover = () => btn.style.background = 'rgba(200,150,12,.2)';
-  btn.onmouseout = () => btn.style.background = 'rgba(2,8,14,.9)';
-  btn.onclick = resetPositions;
-  document.body.appendChild(btn);
-}
+particleRAF = requestAnimationFrame(particleLoop);
 
-function ripple(x,y){
-  const d=document.createElement('div');
-  d.className='ripple-ring';
-  d.style.cssText=`left:${x}px;top:${y}px;width:90px;height:90px;`;
-  document.body.appendChild(d);
-  setTimeout(()=>d.remove(), 800);
-}
-
-function goLink(url){ resumeAC(); sfxLink(); setTimeout(()=>window.open(url,'_blank'), 130); }
-
-// Activate the whole node map on first click
+/* ─────────────────────────────────────
+   NODE SHOW/HIDE  — just opacity + pointer-events,
+   no position changes
+───────────────────────────────────── */
 function activateStart(){
   if(mainActive) return;
-  resumeAC(); sfxStart();
-  mainActive=true;
+  resumeAC(); sfxStart(); mainActive=true;
+
   const sn=document.getElementById('start-node');
   sn.style.animation='none';
   sn.style.boxShadow='0 0 50px rgba(200,150,12,.6)';
-  positionMain();
-  ripple(window.innerWidth/2, window.innerHeight/2);
-  
-  // Make all nodes draggable
-  const allNodes = ['bio-node', 'msg-node', 'socials-node', ...SOCIAL_IDS];
-  allNodes.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) makeDraggable(el);
-  });
-  makeDraggable(sn);
-  
+
+  /* Reveal the 3 main child nodes with a ripple each */
   ['bio-node','msg-node','socials-node'].forEach((id,i)=>{
     setTimeout(()=>{
       const el=document.getElementById(id);
@@ -373,27 +308,20 @@ function activateStart(){
       ripple(r.left+r.width/2, r.top+r.height/2);
     }, 130+i*130);
   });
-  setTimeout(drawStrings, 520);
-  addResetButton();
 
-  window.addEventListener('resize',()=>{
-    drawStrings();
-  });
+  /* Start particle strings slightly after nodes appear */
+  setTimeout(()=>{ rebuildLinks(); }, 500);
 }
 
-// Toggle social sub-nodes
 function activateSocials(){
   if(!mainActive) return;
   resumeAC();
   if(socialsActive){
-    sfxClose();
-    socialsActive=false;
+    sfxClose(); socialsActive=false;
     SOCIAL_IDS.forEach(id=>document.getElementById(id).classList.remove('visible'));
-    drawStrings();
-    return;
+    rebuildLinks(); return;
   }
   socialsActive=true;
-  positionSocials();
   SOCIAL_IDS.forEach((id,i)=>{
     setTimeout(()=>{
       const el=document.getElementById(id);
@@ -403,8 +331,18 @@ function activateSocials(){
       ripple(r.left+r.width/2, r.top+r.height/2);
     }, 60+i*70);
   });
-  setTimeout(drawStrings, 560);
+  setTimeout(()=>{ rebuildLinks(); }, 520);
 }
+
+function ripple(x,y){
+  const d=document.createElement('div'); d.className='ripple-ring';
+  d.style.cssText=`left:${x}px;top:${y}px;width:90px;height:90px;`;
+  document.body.appendChild(d); setTimeout(()=>d.remove(), 800);
+}
+function goLink(url){ resumeAC(); sfxLink(); setTimeout(()=>window.open(url,'_blank'),130); }
+
+/* Rebuild strings on resize so they track node positions */
+window.addEventListener('resize', ()=>{ if(mainActive) rebuildLinks(); });
 
 /* ═══════════════════════════════════════
    PANEL
@@ -431,18 +369,16 @@ function buildBio(){
     <div class="btab active" data-pane="about"><span class="bicon">&#x13080;</span>ABOUT</div>
     <div class="btab" data-pane="skills"><span class="bicon">&#9000;</span>SKILLS</div>
     <div class="btab" data-pane="career"><span class="bicon">&#x13199;</span>CAREER</div>
-    <div class="btab" data-pane="origin"><span class="bicon">🇪🇬</span>ORIGIN</div>
+    <div class="btab" data-pane="origin"><span class="bicon">&#x1F1EA;&#x1F1EC;</span>ORIGIN</div>
   </div>
-
   <div class="bpane active" id="pane-about">
     <div class="bio-grid">
-      <div class="bio-card full"><div class="card-label">WHO AM I</div><p>I'm <span class="gold">Adam</span>, aka <span class="gold">IWEADAM</span> — a self-taught dev from Egypt, born <span class="gold">07/07</span>. I pull apart how things work and build something cooler from the pieces. Running on curiosity, late nights, and the satisfaction of code that actually does something.</p></div>
-      <div class="bio-card"><div class="card-label">INTERESTS</div><div class="tags"><span class="tag">⌨ Coding</span><span class="tag">🎮 Gaming</span><span class="tag">♟ Chess</span><span class="tag">🖥 PC</span><span class="tag">🔐 Cybersec</span></div></div>
-      <div class="bio-card"><div class="card-label">VIBE</div><p>Mix of everything — chill when I need to be, locked in when it matters. Competitive in chess, creative with code, curious about everything.</p></div>
-      <div class="bio-card full"><div class="card-label">WHAT DRIVES ME</div><p>Knowing how systems break is the same as knowing how to build them right. That's why <span class="gold">cybersecurity</span> and coding hit the same nerve — both are about understanding what's underneath.</p></div>
+      <div class="bio-card full"><div class="card-label">WHO AM I</div><p>I'm <span class="gold">Adam</span>, aka <span class="gold">IWEADAM</span> \u2014 a self-taught dev from Egypt, born <span class="gold">07/07</span>. I pull apart how things work and build something cooler from the pieces. Running on curiosity, late nights, and the satisfaction of code that actually does something.</p></div>
+      <div class="bio-card"><div class="card-label">INTERESTS</div><div class="tags"><span class="tag">&#x2328; Coding</span><span class="tag">&#x1F3AE; Gaming</span><span class="tag">&#x265F; Chess</span><span class="tag">&#x1F5A5; PC</span><span class="tag">&#x1F510; Cybersec</span></div></div>
+      <div class="bio-card"><div class="card-label">VIBE</div><p>Mix of everything \u2014 chill when I need to be, locked in when it matters. Competitive in chess, creative with code, curious about everything.</p></div>
+      <div class="bio-card full"><div class="card-label">WHAT DRIVES ME</div><p>Knowing how systems break is the same as knowing how to build them right. That's why <span class="gold">cybersecurity</span> and coding hit the same nerve \u2014 both are about understanding what's underneath.</p></div>
     </div>
   </div>
-
   <div class="bpane" id="pane-skills">
     <div class="bio-card full" style="margin-bottom:14px"><div class="card-label">LANGUAGES</div><div class="skill-list" style="margin-top:8px">
       <div class="skill-row"><span class="skill-name">HTML</span><div class="skill-bar"><div class="skill-fill gold-bar" style="width:82%"></div></div></div>
@@ -451,20 +387,18 @@ function buildBio(){
       <div class="skill-row"><span class="skill-name">Python</span><div class="skill-bar"><div class="skill-fill cyan-bar" style="width:50%"></div></div></div>
       <div class="skill-row"><span class="skill-name">Lua</span><div class="skill-bar"><div class="skill-fill cyan-bar" style="width:35%"></div></div></div>
     </div></div>
-    <div class="bio-card full"><div class="card-label">ALSO EXPLORING</div><div class="tags" style="margin-top:4px"><span class="tag">🔐 Cybersecurity</span><span class="tag">🌐 Networking</span><span class="tag">💻 Linux</span><span class="tag">🖥 PC Hardware</span></div></div>
+    <div class="bio-card full"><div class="card-label">ALSO EXPLORING</div><div class="tags" style="margin-top:4px"><span class="tag">&#x1F510; Cybersecurity</span><span class="tag">&#x1F310; Networking</span><span class="tag">&#x1F4BB; Linux</span><span class="tag">&#x1F5A5; PC Hardware</span></div></div>
   </div>
-
   <div class="bpane" id="pane-career">
     <div class="goal-card"><span class="status-badge badge-active">ACTIVE GOAL</span><h4>CYBERSECURITY</h4><p>My main trajectory. I want to understand systems deeply enough to find what others miss. Still early, building the foundations right.</p></div>
-    <div class="goal-card"><span class="status-badge badge-wip">IN PROGRESS</span><h4>CODING — BUILDING THE BASE</h4><p>HTML, CSS, JS, Python. Each project teaches something the tutorials skipped. This site is proof I'm building, not just watching videos.</p></div>
+    <div class="goal-card"><span class="status-badge badge-wip">IN PROGRESS</span><h4>CODING \u2014 BUILDING THE BASE</h4><p>HTML, CSS, JS, Python. Each project teaches something the tutorials skipped. This site is proof I'm building, not just watching videos.</p></div>
     <div class="goal-card"><span class="status-badge badge-wip">STUDYING</span><h4>SCHOOL + SELF-TEACHING</h4><p>Balancing both. School gives structure, self-teaching gives depth. Goal: get good enough that opportunities start looking for me.</p></div>
-    <div class="bio-card full" style="margin-top:4px;border-color:rgba(200,150,12,.2)"><div class="card-label">REAL TALK</div><p style="font-size:.85rem;color:#9a9080">Early days. No portfolio yet, no job yet — just a kid from Kafr El Sheikh teaching himself how the world's infrastructure runs, one concept at a time. Watch this space.</p></div>
+    <div class="bio-card full" style="margin-top:4px;border-color:rgba(200,150,12,.2)"><div class="card-label">REAL TALK</div><p style="font-size:.85rem;color:#9a9080">Early days. No portfolio yet, no job yet \u2014 just a kid from Kafr El Sheikh teaching himself how the world's infrastructure runs, one concept at a time. Watch this space.</p></div>
   </div>
-
   <div class="bpane" id="pane-origin">
-    <div class="bio-card full" style="margin-bottom:12px"><div class="card-label">LOCATION</div><p>🇪🇬 <span class="gold">Kafr El Sheikh, Egypt</span> — Delta region, far from the hype, close to the grind. Not Cairo, not the spotlight. Just a desk, a screen, and the internet.</p></div>
-    <div class="bio-card full" style="margin-bottom:12px"><div class="card-label">WHAT THAT MEANS</div><p>No bootcamps around the corner. No tech meetups down the road. Everything I know came from screens, docs, and stubbornness. That's either a disadvantage or a story — I'm going with story.</p></div>
-    <div class="bio-card full"><div class="card-label">BORN</div><p><span class="gold">07/07</span> — seven-seven. Make of that what you will.</p></div>
+    <div class="bio-card full" style="margin-bottom:12px"><div class="card-label">LOCATION</div><p>&#x1F1EA;&#x1F1EC; <span class="gold">Kafr El Sheikh, Egypt</span> \u2014 Delta region, far from the hype, close to the grind. Not Cairo, not the spotlight. Just a desk, a screen, and the internet.</p></div>
+    <div class="bio-card full" style="margin-bottom:12px"><div class="card-label">WHAT THAT MEANS</div><p>No bootcamps around the corner. No tech meetups down the road. Everything I know came from screens, docs, and stubbornness. That's either a disadvantage or a story \u2014 I'm going with story.</p></div>
+    <div class="bio-card full"><div class="card-label">BORN</div><p><span class="gold">07/07</span> \u2014 seven-seven. Make of that what you will.</p></div>
   </div>`;
 }
 
