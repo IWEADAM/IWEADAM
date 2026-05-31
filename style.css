@@ -54,9 +54,9 @@ html, body { height: 100%; background: var(--bg); color: #e8dfc0; font-family: v
   opacity: 0; pointer-events: none;
 }
 .node-btn.visible { opacity: 1; pointer-events: auto; }
-.node-btn:hover { transform: translate(-50%, -50%) scale(1.13); box-shadow: 0 0 45px rgba(200,150,12,.55), inset 0 0 30px rgba(200,150,12,.12); border-color: var(--gold); }
+.node-btn:hover { transform: translate(-50%, -50%); box-shadow: 0 0 45px rgba(200,150,12,.55), inset 0 0 30px rgba(200,150,12,.12); border-color: var(--gold); }
 .node-btn.cyan-node { border-color: var(--cyan-dim); color: var(--cyan); box-shadow: 0 0 20px rgba(0,229,255,.15), inset 0 0 20px rgba(0,229,255,.04); }
-.node-btn.cyan-node:hover { box-shadow: 0 0 45px rgba(0,229,255,.45), inset 0 0 30px rgba(0,229,255,.1); border-color: var(--cyan); }
+.node-btn.cyan-node:hover { transform: translate(-50%, -50%); box-shadow: 0 0 45px rgba(0,229,255,.45), inset 0 0 30px rgba(0,229,255,.1); border-color: var(--cyan); }
 .node-lg { width: 96px; height: 96px; font-size: .48rem; letter-spacing: .14em; }
 .node-md { width: 80px; height: 80px; font-size: .44rem; letter-spacing: .12em; }
 .node-sm { width: 64px; height: 64px; font-size: .38rem; letter-spacing: .1em; }
@@ -144,5 +144,23 @@ input:focus, textarea:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 1
 /* ── RIPPLE ── */
 .ripple-ring { position: fixed; border-radius: 50%; pointer-events: none; z-index: 100; border: 2px solid var(--gold); transform: translate(-50%, -50%) scale(0); animation: rippleOut .7s cubic-bezier(.16,1,.3,1) forwards; }
 @keyframes rippleOut { to { transform: translate(-50%, -50%) scale(1); opacity: 0; } }
+
+
+/* ── FIXED NODE POSITIONS (no JS positioning) ── */
+#start-node   { left: 50%;  top: 50%; }
+#bio-node     { left: 22%;  top: 28%; }
+#msg-node     { left: 78%;  top: 28%; }
+#socials-node { left: 50%;  top: 78%; }
+
+/* Social sub-nodes — arc below socials */
+#soc-insta    { left: 18%;  top: 72%; }
+#soc-discord  { left: 28%;  top: 85%; }
+#soc-github   { left: 40%;  top: 91%; }
+#soc-spotify  { left: 60%;  top: 91%; }
+#soc-steam    { left: 72%;  top: 85%; }
+#soc-roblox   { left: 82%;  top: 72%; }
+
+/* Particle canvas sits under node buttons */
+#string-svg { display: none; }
 
 @media (max-width: 500px) { .bio-grid { grid-template-columns: 1fr; } .bio-card.full { grid-column: auto; } }
